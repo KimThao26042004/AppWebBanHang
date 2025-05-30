@@ -1,0 +1,73 @@
+{
+  "categories": [
+    {
+      "name": "Thời trang nữ",
+      "subcategory": [
+        "Tất cả",
+        "Áo thun nữ",
+        "Áo sơ mi nữ",
+        "Áo giữ nhiệt nữ",
+        "Set đồ nữ",
+        "Đầm nữ",
+        "Chân váy nữ"
+      ]
+    },
+    {
+      "name": "Thời trang nam",
+      "subcategory": [
+        "Tất cả",
+        "Áo khoác & Jacket",
+        "Áo sơ mi nam",
+        "Áo thun nam",
+        "Quần dài nam",
+        "Quần nỉ nam",
+        "Đồ công sở"
+      ]
+    },
+    {
+      "name": "Thời trang trẻ em",
+      "subcategory": [
+        "Tất cả",
+        "Quần áo em bé",
+        "Áo trẻ em",
+        "Set đồ trẻ em",
+        "Quần trẻ em"
+      ]
+    },
+    {
+      "name": "Thời trang trung niên",
+      "subcategory": [
+        "Tất cả",
+        "Đầm trung niên",
+        "Set đồ trung niên"
+      ]
+    },
+    {
+      "name": "Trang sức",
+      "subcategory": [
+        "Tất cả",
+        "Vòng cổ",
+        "Vàng",
+        "Bông tai"
+      ]
+    },
+    {
+      "name": "Phụ kiện nam",
+      "subcategory": [
+        "Tất cả",
+        "Đồng hồ nam",
+        "Giày nam",
+        "Mũ nam"
+      ]
+    },
+    {
+      "name": "Phụ kiện nữ",
+      "subcategory": [
+        "Tất cả",
+        "Đồng hồ nữ",
+        "Giày nữ",
+        "Túi xách"
+      ]
+    }
+  ]
+}
