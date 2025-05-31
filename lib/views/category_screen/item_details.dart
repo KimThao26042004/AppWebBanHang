@@ -21,6 +21,7 @@ class _ItemDetailsState extends State<ItemDetails> {
     var controller = Get.find<ProductController>();
     controller.resetValues();
     controller.checkIfFav(widget.data);
+    controller.getProductsBySubcategory(widget.data['p_subcategory']);
     return Scaffold(
       backgroundColor: lightGrey,
       appBar: AppBar(
@@ -279,25 +280,59 @@ class _ItemDetailsState extends State<ItemDetails> {
 
                       productsYouMayLike.text.fontFamily(bold).size(16).color(darkFontGrey).make(),
                       10.heightBox,
-                      SingleChildScrollView(
+                      Obx(() => SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: List.generate(6, (index) => Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Image.asset(
-                                  imgP1,
-                                  width: 130,
-                                  fit: BoxFit.cover
-                              ),
-                              10.heightBox,
-                              "Laptop 4GB/64GB".text.fontFamily(semibold).color(darkFontGrey).make(),
-                              10.heightBox,
-                              "₫ 1.800.000".text.color(redColor).fontFamily(bold).size(15).make()
-                            ],
-                          ).box.white.margin(const EdgeInsets.symmetric(horizontal: 4)).roundedSM.padding(const EdgeInsets.all(8)).make()),
+                          children: controller.subCatProducts
+                              .where((product) => product['p_name'] != widget.data['p_name']) // ✅ Bỏ sản phẩm đang xem
+                              .map((product) {
+                            return GestureDetector(
+                              onTap: () {
+                                Get.to(() => ItemDetails(title: product['p_name'], data: product));
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Image.network(
+                                    product['p_imgs'][0],
+                                    width: 130,
+                                    height: 130,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  10.heightBox,
+                                  SizedBox(
+                                    width: 130,
+                                    child: product['p_name'].toString().text
+                                        .fontFamily(semibold)
+                                        .color(darkFontGrey)
+                                        .size(14)
+                                        .maxLines(2)
+                                        .overflow(TextOverflow.ellipsis)
+                                        .make(),
+                                  ),
+                                  5.heightBox,
+                                  NumberFormat.currency(locale: 'vi_VN', symbol: '₫')
+                                      .format(int.parse(product['p_price']))
+                                      .text
+                                      .color(redColor)
+                                      .fontFamily(bold)
+                                      .size(15)
+                                      .make(),
+                                ],
+                              )
+                                  .box
+                                  .white
+                                  .margin(const EdgeInsets.symmetric(horizontal: 4))
+                                  .roundedSM
+                                  .padding(const EdgeInsets.all(8))
+                                  .width(150)
+                                  .make(),
+                            );
+                          }).toList(),
                         ),
-                      )
+                      ))
+
+
 
                     ],
                   ),
@@ -321,7 +356,7 @@ class _ItemDetailsState extends State<ItemDetails> {
                       size: hasSize ? widget.data['p_sizes'][controller.sizeIndex.value] : '',
                       price: widget.data['p_price'],
                       context: context,
-                      vendorID: widget.data['vendor_id'],
+                      // vendorID: widget.data['vendor_id'],
                       img: widget.data['p_imgs'][0],
                       qty: controller.quantity.value,
                       sellername: widget.data['p_seller'],

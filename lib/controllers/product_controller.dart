@@ -11,6 +11,7 @@ class ProductController extends GetxController {
   var totalPrice = 0.obs;
 
   var subcat = [];
+  var subCatProducts = [].obs;
 
   var isFav = false.obs;
 
@@ -23,6 +24,22 @@ class ProductController extends GetxController {
     for (var e in s[0].subcategory) {
       subcat.add(e);
     }
+  }
+
+  getProductsBySubcategory(String subcat) async {
+    subCatProducts.clear();
+    var snapshot = await firestore
+        .collection(productsCollection)
+        .where('p_subcategory', isEqualTo: subcat)
+        .limit(10)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      var data = doc.data();
+      data['id'] = doc.id; // ✅ Đúng
+      subCatProducts.add(data);
+    }
+
   }
 
   changeColorIndex(index) {
@@ -49,7 +66,7 @@ class ProductController extends GetxController {
     totalPrice.value = price * quantity.value;
   }
 
-  addToCart({title, img, sellername, color, size, price, qty, tprice, context, vendorID}) async {
+  addToCart({title, img, sellername, color, size, price, qty, tprice, context}) async {
     await firestore.collection(cartCollection).doc().set({
       'title': title,
       'img': img,
@@ -57,7 +74,7 @@ class ProductController extends GetxController {
       'color': color,
       'size': size,
       'qty': qty,
-      'vendor_id': vendorID,
+      // 'vendor_id': vendorID,
       'price': price,
       'tprice': tprice,
       'added_by': currentUser!.uid
@@ -98,5 +115,5 @@ class ProductController extends GetxController {
       isFav(false);
     }
   }
-  
+
 }

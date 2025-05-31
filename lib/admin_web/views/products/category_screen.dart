@@ -22,13 +22,41 @@ class CategoryPage extends StatelessWidget {
     // Use images from featuredListImages for subcategories as a fallback
     final subcategoryImages = {
       // featuredTitles1
-      womenDress: featuredListImages1[5], // imgS1
-      handBag: featuredListImages1[1], // imgS2
-      womenTshirts: featuredListImages1[2], // imgS3
+      allproducts: featuredListImages1[0],
+      womenTshirts: featuredListImages1[1],
+      womenShirts: featuredListImages1[2],
+      womenThermal: featuredListImages1[3],
+      womenSets: featuredListImages1[4],
+      womenSkirts: featuredListImages1[5],
+      womenDress: featuredListImages1[5],
+
       // featuredTitles2
-      officeWear: featuredListImages2[0], // imgS4
-      menPants: featuredListImages2[1], // imgS5
-      necklace: featuredListImages2[2], // imgS6
+      menJackets: featuredListImages2[1],
+      menShirts: featuredListImages2[2],
+      MenTshirts: featuredListImages2[3],
+      menPants: featuredListImages2[4],
+      menSweatpants: featuredListImages2[5],
+      officeWear: featuredListImages2[5],
+      // featuredTitles3
+      babyClothes: featuredListImages3[1],
+      childrenShirts: featuredListImages3[2],
+      childrenSets: featuredListImages3[3],
+      childrenPants: featuredListImages3[3],
+      // featuredTitles4
+      middleAgedDress: featuredListImages4[0],
+      middleAgedSets: featuredListImages4[1],
+      // featuredTitles5
+      necklace: featuredListImages5[0],
+      gold: featuredListImages5[1],
+      earrings: featuredListImages5[2],
+      // featuredTitles6
+      menWatches: featuredListImages6[0],
+      menHats: featuredListImages6[1],
+      menShoes: featuredListImages6[2],
+      // featuredTitles7
+      womenWatches: featuredListImages7[0],
+      womenShoes: featuredListImages7[1],
+      handBag: featuredListImages7[2],
     };
 
     return Padding(

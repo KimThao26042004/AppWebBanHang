@@ -5,17 +5,16 @@ const socialIconList = [icFacebookLogo, icGoogleLogo, icTwitterLogo];
 const slidersList = [imgSlider1, imgSlider2, imgSlider3, imgSlider4];
 const secondSlidersList = [imgSs1, imgSs2, imgSs3, imgSs4];
 
-const featuredListImages1 = [imgS9, imgS3, imgS3, imgS3, imgS4, imgS11, imgS11];
-const featuredListImages2 = [imgS4, imgS5, imgS6, imgS6, imgS6, imgS6, imgS6];
-const featuredListImages3 = [imgS4, imgS5, imgS6, imgS6, imgS6];
-const featuredListImages4 = [imgS4, imgS5, imgS6];
-const featuredListImages5 = [imgS4, imgS5, imgS6, imgS6];
-const featuredListImages6 = [imgS4, imgS5, imgS6, imgS6];
-const featuredListImages7 = [imgS4, imgS5, imgS6, imgS6];
+const featuredListImages1 = [ imgS3, imgS3, imgS3, imgS4, imgS11, imgS11];
+const featuredListImages2 = [ imgS5, imgS6, imgS6, imgS6, imgS6, imgS6];
+const featuredListImages3 = [ imgS5, imgS6, imgS6, imgS6];
+const featuredListImages4 = [ imgS5, imgS6];
+const featuredListImages5 = [ imgS5, imgS6, imgS6];
+const featuredListImages6 = [ imgS5, imgS6, imgS6];
+const featuredListImages7 = [ imgS5, imgS6, imgS6];
 
 /////////////////////////////////////////////
 const featuredTitles1 = [
-  allproducts,
   womenTshirts,
   womenShirts,
   womenThermal,
@@ -24,7 +23,6 @@ const featuredTitles1 = [
   womenDress
 ];
 const featuredTitles2 = [
-  allproducts,
   menJackets,
   menShirts,
   MenTshirts,
@@ -33,31 +31,26 @@ const featuredTitles2 = [
   officeWear
 ];
 const featuredTitles3 = [
-  allproducts,
   babyClothes,
   childrenShirts,
   childrenSets,
   childrenPants
 ];
 const featuredTitles4 = [
-  allproducts,
   middleAgedDress,
   middleAgedSets
 ];
 const featuredTitles5 = [
-  allproducts,
   necklace,
   gold,
   earrings
 ];
 const featuredTitles6 = [
-  allproducts,
   menWatches,
   menHats,
   menShoes
 ];
 const featuredTitles7 = [
-  allproducts,
   womenWatches,
   womenShoes,
   handBag

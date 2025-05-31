@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,13 +8,13 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 
 final Map<String, List<String>> categoriesWithSubcategories = {
-  'Thời trang nữ': ['Tất cả', 'Áo thun nữ', 'Áo sơ mi nữ', 'Áo giữ nhiệt nữ', 'Set đồ', 'Chân váy nữ', 'Đầm nữ'],
-  'Thời trang nam': ['Tất cả', 'Áo khoác & Jacket', 'Áo sơ mi', 'Áo thun nam', 'Quần dài nam ', 'Quần nỉ nam', 'Đồ công sở'],
-  'Thời trang trẻ em': ['Tất cả', 'Quần áo em bé', 'Áo trẻ em', 'Set đồ trẻ em', 'Quần trẻ em'],
-  'Thời trang trung niên': ['Tất cả', 'Đầm trung niên', 'Set đồ trung niên'],
-  'Trang sức': ['Tất cả', 'Vòng cổ', 'Vàng', 'Bông tai'],
-  'Phụ kiện nam': ['Tất cả', 'Đồng hồ nam', 'Giày nam', 'Mũ nam'],
-  'Phụ kiện nữ': ['Tất cả', 'Đồng hồ nữ', 'Giày nữ', 'Túi xách'],
+  'Thời trang nữ': [ 'Áo thun nữ', 'Áo sơ mi nữ', 'Áo giữ nhiệt nữ', 'Set đồ', 'Chân váy nữ', 'Đầm nữ'],
+  'Thời trang nam': [ 'Áo khoác & Jacket', 'Áo sơ mi', 'Áo thun nam', 'Quần dài nam ', 'Quần nỉ nam', 'Đồ công sở'],
+  'Thời trang trẻ em': [ 'Quần áo em bé', 'Áo trẻ em', 'Set đồ trẻ em', 'Quần trẻ em'],
+  'Thời trang trung niên': [ 'Đầm trung niên', 'Set đồ trung niên'],
+  'Trang sức': [ 'Vòng cổ', 'Vàng', 'Bông tai'],
+  'Phụ kiện nam': [ 'Đồng hồ nam', 'Giày nam', 'Mũ nam'],
+  'Phụ kiện nữ': [ 'Đồng hồ nữ', 'Giày nữ', 'Túi xách'],
 };
 
 class ProductPage extends StatelessWidget {
@@ -21,6 +22,147 @@ class ProductPage extends StatelessWidget {
 
   CollectionReference get productsCollection =>
       FirebaseFirestore.instance.collection('products');
+
+  // Widget hiển thị ảnh với error handling
+// Fixed Widget hiển thị ảnh với error handling
+  Widget _buildNetworkImage(String imageUrl, {double width = 80, double height = 80}) {
+    if (imageUrl.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[400]!),
+        ),
+        child: Icon(
+          Icons.image_not_supported,
+          size: width * 0.5,
+          color: Colors.grey[600],
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        imageUrl,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          print('Image loading error for URL: $imageUrl - Error: $error');
+          return Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[400]!),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.broken_image_outlined,
+                size: math.min(width * 0.4, height * 0.4), // Ensure icon fits
+                color: Colors.grey[600],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Method upload ảnh cải tiến
+  Future<List<String>> _uploadImages(List<XFile> imageFiles) async {
+    List<String> uploadedUrls = [];
+
+    try {
+      for (final xfile in imageFiles) {
+        // Tạo tên file unique với extension
+        String fileExtension = xfile.name.split('.').last.toLowerCase();
+        if (!['jpg', 'jpeg', 'png', 'webp'].contains(fileExtension)) {
+          fileExtension = 'jpg'; // default extension
+        }
+
+        String cleanedName = xfile.name;
+        if (!cleanedName.endsWith('.$fileExtension')) {
+          cleanedName = '${cleanedName}_$fileExtension';
+        }
+
+        String fileName = '${DateTime.now().millisecondsSinceEpoch}_$cleanedName';
+
+        // Tạo reference rõ ràng
+        final ref = FirebaseStorage.instance
+            .ref()
+            .child('product_images')
+            .child(fileName);
+
+        UploadTask uploadTask;
+
+        // Thêm metadata
+        final metadata = SettableMetadata(
+          contentType: 'image/$fileExtension',
+          cacheControl: 'max-age=3600', // Cache 1 hour
+          customMetadata: {
+            'uploaded_by': 'admin',
+            'upload_time': DateTime.now().toIso8601String(),
+          },
+        );
+
+        if (kIsWeb) {
+          final bytes = await xfile.readAsBytes();
+          uploadTask = ref.putData(bytes, metadata);
+        } else {
+          uploadTask = ref.putFile(File(xfile.path), metadata);
+        }
+
+        // Đợi upload hoàn thành với timeout
+        final snapshot = await uploadTask.timeout(
+          Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException('Upload timeout for file: ${xfile.name}');
+          },
+        );
+
+        // Lấy download URL
+        final downloadUrl = await snapshot.ref.getDownloadURL();
+
+        // Verify URL
+        if (downloadUrl.isNotEmpty && downloadUrl.startsWith('https://')) {
+          uploadedUrls.add(downloadUrl);
+          print('✅ Successfully uploaded: ${xfile.name} -> $downloadUrl');
+        } else {
+          print('❌ Invalid download URL for ${xfile.name}: $downloadUrl');
+        }
+      }
+    } catch (e) {
+      print('❌ Upload error: $e');
+      throw Exception('Lỗi upload ảnh: ${e.toString()}');
+    }
+
+    return uploadedUrls;
+  }
 
   Future<void> _showProductDialog(BuildContext context,
       {DocumentSnapshot? doc}) async {
@@ -36,6 +178,7 @@ class ProductPage extends StatelessWidget {
         text: isEdit ? (doc!['p_price']?.toString() ?? '') : '');
 
     bool isFeatured = isEdit ? (doc!['is_featured'] ?? false) : false;
+    bool isUploading = false;
 
     List<String> subcategoriesForSelectedCategory = selectedCategory != null
         ? categoriesWithSubcategories[selectedCategory] ?? []
@@ -50,15 +193,33 @@ class ProductPage extends StatelessWidget {
     final picker = ImagePicker();
 
     Future<void> pickImages() async {
-      if (kIsWeb) {
-        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-        if (pickedFile != null) {
-          selectedImageFiles = [pickedFile];
+      try {
+        if (kIsWeb) {
+          final pickedFile = await picker.pickImage(
+            source: ImageSource.gallery,
+            maxWidth: 1024,
+            maxHeight: 1024,
+            imageQuality: 85,
+          );
+          if (pickedFile != null) {
+            selectedImageFiles = [pickedFile];
+          }
+        } else {
+          final pickedFiles = await picker.pickMultiImage(
+            maxWidth: 1024,
+            maxHeight: 1024,
+            imageQuality: 85,
+          );
+          if (pickedFiles != null && pickedFiles.isNotEmpty) {
+            selectedImageFiles = pickedFiles.take(5).toList(); // Limit to 5 images
+          }
         }
-      } else {
-        final pickedFiles = await picker.pickMultiImage();
-        if (pickedFiles != null && pickedFiles.isNotEmpty) {
-          selectedImageFiles = pickedFiles;
+      } catch (e) {
+        print('Error picking images: $e');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi chọn ảnh: ${e.toString()}')),
+          );
         }
       }
     }
@@ -131,95 +292,134 @@ class ProductPage extends StatelessWidget {
 
                 // Show old images if no new selected images
                 if (selectedImageFiles.isEmpty && oldImageUrls.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: oldImageUrls
-                        .map(
-                          (url) => Stack(
-                        alignment: Alignment.topRight,
-                        children: [
-                          Image.network(
-                            url,
-                            height: 80,
-                            width: 80,
-                            fit: BoxFit.cover,
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                oldImageUrls.remove(url);
-                              });
-                            },
-                            child: Container(
-                              color: Colors.black54,
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 20,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Ảnh hiện tại:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: oldImageUrls
+                            .map(
+                              (url) => Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              _buildNetworkImage(url),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    oldImageUrls.remove(url);
+                                  });
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        )
+                            .toList(),
                       ),
-                    )
-                        .toList(),
+                    ],
                   ),
 
                 // Show selected images
                 if (selectedImageFiles.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: selectedImageFiles
-                        .map(
-                          (xfile) => kIsWeb
-                          ? FutureBuilder<Uint8List>(
-                        future: xfile.readAsBytes(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            if (snapshot.hasData) {
-                              return Image.memory(
-                                snapshot.data!,
-                                height: 80,
-                                width: 80,
-                                fit: BoxFit.cover,
-                              );
-                            } else {
-                              return const SizedBox(
-                                height: 80,
-                                width: 80,
-                                child: Center(
-                                    child: Icon(Icons.error_outline)),
-                              );
-                            }
-                          } else {
-                            return const SizedBox(
-                              height: 80,
-                              width: 80,
-                              child: Center(
-                                  child: CircularProgressIndicator()),
-                            );
-                          }
-                        },
-                      )
-                          : Image.file(
-                        File(xfile.path),
-                        height: 80,
-                        width: 80,
-                        fit: BoxFit.cover,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Ảnh mới chọn:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: selectedImageFiles
+                            .map(
+                              (xfile) => Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: kIsWeb
+                                    ? FutureBuilder<Uint8List>(
+                                  future: xfile.readAsBytes(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.done) {
+                                      if (snapshot.hasData) {
+                                        return Image.memory(
+                                          snapshot.data!,
+                                          height: 80,
+                                          width: 80,
+                                          fit: BoxFit.cover,
+                                        );
+                                      } else {
+                                        return Container(
+                                          height: 80,
+                                          width: 80,
+                                          color: Colors.grey[300],
+                                          child: Icon(Icons.error_outline),
+                                        );
+                                      }
+                                    } else {
+                                      return Container(
+                                        height: 80,
+                                        width: 80,
+                                        color: Colors.grey[200],
+                                        child: Center(
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                )
+                                    : Image.file(
+                                  File(xfile.path),
+                                  height: 80,
+                                  width: 80,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedImageFiles.remove(xfile);
+                                  });
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                            .toList(),
                       ),
-                    )
-                        .toList(),
+                    ],
                   ),
 
                 const SizedBox(height: 8),
 
                 ElevatedButton.icon(
                   icon: const Icon(Icons.photo_library),
-                  label: const Text('Chọn ảnh'),
-                  onPressed: () async {
+                  label: Text(selectedImageFiles.isEmpty ? 'Chọn ảnh' : 'Chọn ảnh khác'),
+                  onPressed: isUploading ? null : () async {
                     await pickImages();
                     setState(() {});
                   },
@@ -231,7 +431,7 @@ class ProductPage extends StatelessWidget {
                   children: [
                     Checkbox(
                       value: isFeatured,
-                      onChanged: (v) {
+                      onChanged: isUploading ? null : (v) {
                         setState(() {
                           isFeatured = v ?? false;
                         });
@@ -240,16 +440,28 @@ class ProductPage extends StatelessWidget {
                     const Text('Nổi bật'),
                   ],
                 ),
+
+                if (isUploading)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('Đang upload ảnh...', style: TextStyle(color: Colors.blue)),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: isUploading ? null : () => Navigator.pop(context),
               child: const Text('Hủy'),
             ),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: isUploading ? null : () async {
                 final pName = pNameCtrl.text.trim();
                 final pCategory = selectedCategory;
                 final pSubCategory = selectedSubCategory;
@@ -268,57 +480,78 @@ class ProductPage extends StatelessWidget {
                   return;
                 }
 
-                // Upload new images & keep old ones
-                List<String> uploadedImageUrls = List.from(oldImageUrls);
+                setState(() {
+                  isUploading = true;
+                });
 
-                if (selectedImageFiles.isNotEmpty) {
-                  for (final xfile in selectedImageFiles) {
-                    String fileName =
-                        '${DateTime.now().millisecondsSinceEpoch}_${xfile.name}';
-                    final ref = FirebaseStorage.instance
-                        .ref()
-                        .child('product_images/$fileName');
-                    UploadTask uploadTask;
-                    if (kIsWeb) {
-                      final bytes = await xfile.readAsBytes();
-                      uploadTask = ref.putData(bytes);
-                    } else {
-                      uploadTask = ref.putFile(File(xfile.path));
-                    }
-                    final snapshot = await uploadTask;
-                    final downloadUrl = await snapshot.ref.getDownloadURL();
-                    uploadedImageUrls.add(downloadUrl);
+                try {
+                  // Upload new images & keep old ones
+                  List<String> uploadedImageUrls = List.from(oldImageUrls);
+
+                  if (selectedImageFiles.isNotEmpty) {
+                    final newUrls = await _uploadImages(selectedImageFiles);
+                    uploadedImageUrls.addAll(newUrls);
                   }
-                }
 
-                if (isEdit) {
-                  await productsCollection.doc(doc!.id).update({
-                    'p_name': pName,
-                    'p_category': pCategory,
-                    'p_subcategory': pSubCategory,
-                    'p_quantity': pQuantity,
-                    'p_price': pPrice,
-                    'is_featured': isFeatured,
-                    'p_imgs': uploadedImageUrls,
-                  });
-                } else {
-                  final newDoc = productsCollection.doc();
-                  await newDoc.set({
-                    'id': newDoc.id,
-                    'p_name': pName,
-                    'p_category': pCategory,
-                    'p_subcategory': pSubCategory,
-                    'p_quantity': pQuantity,
-                    'p_price': pPrice,
-                    'is_featured': isFeatured,
-                    'p_sizes': [],
-                    'p_colors': [],
-                    'p_imgs': uploadedImageUrls,
-                    'p_wishlist': [],
+                  // Ensure at least one image
+                  if (uploadedImageUrls.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Vui lòng thêm ít nhất một ảnh')),
+                    );
+                    setState(() {
+                      isUploading = false;
+                    });
+                    return;
+                  }
+
+                  if (isEdit) {
+                    await productsCollection.doc(doc!.id).update({
+                      'p_name': pName,
+                      'p_category': pCategory,
+                      'p_subcategory': pSubCategory,
+                      'p_quantity': pQuantityCtrl.text,
+                      'p_price': pPriceCtrl.text,
+                      'is_featured': isFeatured,
+                      'p_imgs': uploadedImageUrls,
+                      'updated_at': FieldValue.serverTimestamp(),
+
+                    });
+                  } else {
+                    final newDoc = productsCollection.doc();
+                    await newDoc.set({
+                      'id': newDoc.id,
+                      'p_name': pName,
+                      'p_category': pCategory,
+                      'p_subcategory': pSubCategory,
+                      'p_quantity': pQuantityCtrl.text,
+                      'p_price': pPriceCtrl.text,
+                      'p_rating': "3.5",
+                      'p_seller': "abcd",
+                      'p_desc': "",
+                      'is_featured': isFeatured,
+                      'p_sizes': [],
+                      'p_colors': [],
+                      'p_imgs': uploadedImageUrls,
+                      'p_wishlist': [],
+                      'created_at': FieldValue.serverTimestamp(),
+                    });
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(isEdit ? 'Cập nhật thành công!' : 'Thêm sản phẩm thành công!')),
+                  );
+
+                  Navigator.pop(context);
+                } catch (e) {
+                  print('Error saving product: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi: ${e.toString()}')),
+                  );
+                } finally {
+                  setState(() {
+                    isUploading = false;
                   });
                 }
-
-                Navigator.pop(context);
               },
               child: Text(isEdit ? 'Lưu' : 'Thêm'),
             ),
@@ -351,7 +584,16 @@ class ProductPage extends StatelessWidget {
       ),
     );
     if (confirm == true) {
-      await productsCollection.doc(docId).delete();
+      try {
+        await productsCollection.doc(docId).delete();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã xóa sản phẩm thành công!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi xóa sản phẩm: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -409,9 +651,11 @@ class ProductPage extends StatelessWidget {
                       SizedBox(
                         width: screenWidth * 0.08,
                         height: screenWidth * 0.08,
-                        child: imgUrl.isEmpty
-                            ? const Icon(Icons.image_not_supported, size: 40)
-                            : Image.network(imgUrl, fit: BoxFit.cover),
+                        child: _buildNetworkImage(
+                            imgUrl,
+                            width: screenWidth * 0.08,
+                            height: screenWidth * 0.08
+                        ),
                       ),
                     ),
                     DataCell(Text(d['p_name'] ?? '')),
@@ -575,4 +819,13 @@ class ProductPage extends StatelessWidget {
       ),
     );
   }
+}
+
+// TimeoutException class
+class TimeoutException implements Exception {
+  final String message;
+  TimeoutException(this.message);
+
+  @override
+  String toString() => 'TimeoutException: $message';
 }
